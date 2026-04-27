@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CT-1 Marksheet — B91 Backend</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      color: #2d3748;
+      letter-spacing: 1px;
+    }
+
+    header p {
+      margin-top: 6px;
+      color: #718096;
+      font-size: 0.95rem;
+    }
+
+    /* ── Rubric ─────────────────────────────── */
+    .rubric {
+      max-width: 820px;
+      margin: 0 auto 50px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+
+    .rubric h2 {
+      background: #4a5568;
+      color: #fff;
+      padding: 14px 24px;
+      font-size: 1rem;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .rubric table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .rubric th {
+      background: #edf2f7;
+      padding: 10px 16px;
+      text-align: left;
+      color: #4a5568;
+      font-weight: 600;
+    }
+
+    .rubric td {
+      padding: 10px 16px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .rubric td:last-child { text-align: center; font-weight: 700; color: #2b6cb0; }
+
+    /* ── Student cards ──────────────────────── */
+    .students {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 28px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 22px;
+      color: #fff;
+    }
+
+    .card-header h3 { font-size: 1.1rem; }
+
+    .score-badge {
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: rgba(255,255,255,.25);
+      border-radius: 8px;
+      padding: 2px 12px;
+      letter-spacing: 1px;
+    }
+
+    /* Grade colours */
+    .grade-a  { background: linear-gradient(135deg, #38a169, #2f855a); }
+    .grade-b  { background: linear-gradient(135deg, #3182ce, #2b6cb0); }
+    .grade-c  { background: linear-gradient(135deg, #d69e2e, #b7791f); }
+    .grade-d  { background: linear-gradient(135deg, #e53e3e, #c53030); }
+
+    .card-body { padding: 18px 22px; }
+
+    .criteria-list {
+      list-style: none;
+      font-size: 0.875rem;
+    }
+
+    .criteria-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 7px 0;
+      border-bottom: 1px solid #f0f0f0;
+      gap: 8px;
+    }
+
+    .criteria-list li:last-child { border-bottom: none; }
+
+    .criteria-label { color: #4a5568; flex: 1; }
+
+    .criteria-mark {
+      font-weight: 700;
+      white-space: nowrap;
+      min-width: 50px;
+      text-align: right;
+    }
+
+    .mark-full    { color: #276749; }
+    .mark-partial { color: #c05621; }
+    .mark-zero    { color: #c53030; }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-left: 6px;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+
+    .tag-ok      { background: #c6f6d5; color: #22543d; }
+    .tag-warn    { background: #fefcbf; color: #744210; }
+    .tag-fail    { background: #fed7d7; color: #822727; }
+
+    .feedback {
+      margin-top: 14px;
+      background: #ebf8ff;
+      border-left: 4px solid #3182ce;
+      border-radius: 0 6px 6px 0;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: #2c5282;
+      line-height: 1.6;
+    }
+
+    .total-row {
+      margin-top: 14px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #2d3748;
+      border-top: 2px solid #e2e8f0;
+      padding-top: 12px;
+    }
+
+    .total-score {
+      font-size: 1.3rem;
+      color: #2b6cb0;
+    }
+
+    /* ── Summary table ──────────────────────── */
+    .summary-wrap {
+      max-width: 700px;
+      margin: 50px auto 0;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+
+    .summary-wrap h2 {
+      background: #2d3748;
+      color: #fff;
+      padding: 14px 24px;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .summary-wrap table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .summary-wrap th {
+      background: #edf2f7;
+      padding: 10px 18px;
+      text-align: left;
+      color: #4a5568;
+    }
+
+    .summary-wrap td {
+      padding: 10px 18px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .summary-wrap tr:hover td { background: #f7fafc; }
+
+    .grade-pill {
+      display: inline-block;
+      border-radius: 20px;
+      padding: 2px 12px;
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: #fff;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 50px;
+      color: #a0aec0;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>CT-1 Class Test — Marksheet</h1>
+  <p>Batch 91 · Backend Track &nbsp;|&nbsp; Date: April 27, 2026 &nbsp;|&nbsp; Full Marks: 20</p>
+</header>
+
+<!-- ══════════════ MARKING RUBRIC ══════════════ -->
+<div class="rubric">
+  <h2>Marking Rubric</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Criteria</th>
+        <th>Marks</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>package.json created (<code>npm init -y</code>)</td><td>2</td></tr>
+      <tr><td>2</td><td>Express.js installed in <code>dependencies</code></td><td>3</td></tr>
+      <tr><td>3</td><td>Nodemon installed in <code>devDependencies</code></td><td>3</td></tr>
+      <tr><td>4</td><td><code>"dev": "nodemon index.js"</code> script in package.json</td><td>3</td></tr>
+      <tr><td>5</td><td>index.js file created</td><td>1</td></tr>
+      <tr><td>6</td><td>index.js: <code>require('express')</code> &amp; <code>express()</code> setup</td><td>2</td></tr>
+      <tr><td>7</td><td>index.js: GET <code>"/"</code> route with correct <code>res.send()</code> message</td><td>3</td></tr>
+      <tr><td>8</td><td>index.js: <code>app.listen(5000)</code> with <code>console.log</code></td><td>3</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════ STUDENT CARDS ══════════════ -->
+<div class="students">
+
+  <!-- ── Ardosh Ali ── -->
+  <div class="card">
+    <div class="card-header grade-b">
+      <h3>Ardosh Ali</h3>
+      <span class="score-badge">19 / 20</span>
+    </div>
+    <div class="card-body">
+      <ul class="criteria-list">
+        <li>
+          <span class="criteria-label">package.json created <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">2 / 2</span>
+        </li>
+        <li>
+          <span class="criteria-label">Express in dependencies <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label">Nodemon in devDependencies <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label"><code>dev</code> script correct <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label">index.js created <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">1 / 1</span>
+        </li>
+        <li>
+          <span class="criteria-label">require + app setup <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">2 / 2</span>
+        </li>
+        <li>
+          <span class="criteria-label">GET route + res.send <span class="tag tag-warn">⚠ lowercase 'w'</span></span>
+          <span class="criteria-mark mark-partial">2 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label">app.listen(5000) + console.log <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+      </ul>
+      <div class="total-row">
+        <span>Total</span>
+        <span class="total-score">19 / 20</span>
+      </div>
+      <div class="feedback">
+        <strong>Feedback:</strong> Excellent work overall. Express, nodemon, and the dev script are all correctly configured. The only issue is a minor typo in <code>res.send()</code> — the message should be <code>"Hello World!"</code> (capital W) as specified in the task. Everything else is clean and correct.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Biplob Prodhan ── -->
+  <div class="card">
+    <div class="card-header grade-c">
+      <h3>Biplob Prodhan</h3>
+      <span class="score-badge">16 / 20</span>
+    </div>
+    <div class="card-body">
+      <ul class="criteria-list">
+        <li>
+          <span class="criteria-label">package.json created <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">2 / 2</span>
+        </li>
+        <li>
+          <span class="criteria-label">Express in dependencies <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label">Nodemon in devDependencies <span class="tag tag-fail">✗ Missing</span></span>
+          <span class="criteria-mark mark-zero">0 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label"><code>dev</code> script present <span class="tag tag-warn">⚠ extra leading space</span></span>
+          <span class="criteria-mark mark-partial">2 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label">index.js created <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">1 / 1</span>
+        </li>
+        <li>
+          <span class="criteria-label">require + app setup <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">2 / 2</span>
+        </li>
+        <li>
+          <span class="criteria-label">GET route + res.send <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label">app.listen(5000) + console.log <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+      </ul>
+      <div class="total-row">
+        <span>Total</span>
+        <span class="total-score">16 / 20</span>
+      </div>
+      <div class="feedback">
+        <strong>Feedback:</strong> The index.js code is perfectly written. However, <strong>nodemon was not installed</strong> — it is missing from <code>devDependencies</code>, meaning the command <code>npm i nodemon -D</code> was either not run or not saved. Additionally, the <code>"dev"</code> script value has an extra leading space (<code>" nodemon index.js"</code>) which could cause issues in some environments. Also note the project name in package.json has a typo: <code>"node-apl--25"</code> (double dash, "apl" instead of "apr").
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Smita Kundu ── -->
+  <div class="card">
+    <div class="card-header grade-a">
+      <h3>Smita Kundu</h3>
+      <span class="score-badge">20 / 20</span>
+    </div>
+    <div class="card-body">
+      <ul class="criteria-list">
+        <li>
+          <span class="criteria-label">package.json created <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">2 / 2</span>
+        </li>
+        <li>
+          <span class="criteria-label">Express in dependencies <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label">Nodemon in devDependencies <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label"><code>dev</code> script correct <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label">index.js created <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">1 / 1</span>
+        </li>
+        <li>
+          <span class="criteria-label">require + app setup <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">2 / 2</span>
+        </li>
+        <li>
+          <span class="criteria-label">GET route + res.send <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label">app.listen(5000) + console.log <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+      </ul>
+      <div class="total-row">
+        <span>Total</span>
+        <span class="total-score">20 / 20</span>
+      </div>
+      <div class="feedback">
+        <strong>Feedback:</strong> Perfect submission! All tasks completed correctly — package.json is properly configured, both express and nodemon are installed in the right sections, the dev script is accurate, and the index.js code is clean and fully correct. Outstanding work!
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sojib Halder ── -->
+  <div class="card">
+    <div class="card-header grade-b">
+      <h3>Sojib Halder</h3>
+      <span class="score-badge">19 / 20</span>
+    </div>
+    <div class="card-body">
+      <ul class="criteria-list">
+        <li>
+          <span class="criteria-label">package.json created <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">2 / 2</span>
+        </li>
+        <li>
+          <span class="criteria-label">Express in dependencies <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label">Nodemon in devDependencies <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label"><code>dev</code> script correct <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label">index.js created <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">1 / 1</span>
+        </li>
+        <li>
+          <span class="criteria-label">require + app setup <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">2 / 2</span>
+        </li>
+        <li>
+          <span class="criteria-label">GET route + res.send <span class="tag tag-warn">⚠ lowercase 'w'</span></span>
+          <span class="criteria-mark mark-partial">2 / 3</span>
+        </li>
+        <li>
+          <span class="criteria-label">app.listen(5000) + console.log <span class="tag tag-ok">✓</span></span>
+          <span class="criteria-mark mark-full">3 / 3</span>
+        </li>
+      </ul>
+      <div class="total-row">
+        <span>Total</span>
+        <span class="total-score">19 / 20</span>
+      </div>
+      <div class="feedback">
+        <strong>Feedback:</strong> Very good work. The project setup — package.json, express, nodemon, and the dev script — is all correct. The only issue is a minor typo in the response string: <code>"Hello world!"</code> should be <code>"Hello World!"</code> (capital W) as required by the task. Great effort overall!
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════ SUMMARY TABLE ══════════════ -->
+<div class="summary-wrap">
+  <h2>Summary</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Marks Obtained</th>
+        <th>Out of</th>
+        <th>Percentage</th>
+        <th>Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Smita Kundu</td>
+        <td><strong>20</strong></td>
+        <td>20</td>
+        <td>100%</td>
+        <td><span class="grade-pill grade-a">A+</span></td>
+      </tr>
+      <tr>
+        <td>Ardosh Ali</td>
+        <td><strong>19</strong></td>
+        <td>20</td>
+        <td>95%</td>
+        <td><span class="grade-pill grade-b">A</span></td>
+      </tr>
+      <tr>
+        <td>Sojib Halder</td>
+        <td><strong>19</strong></td>
+        <td>20</td>
+        <td>95%</td>
+        <td><span class="grade-pill grade-b">A</span></td>
+      </tr>
+      <tr>
+        <td>Biplob Prodhan</td>
+        <td><strong>16</strong></td>
+        <td>20</td>
+        <td>80%</td>
+        <td><span class="grade-pill grade-c">B</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>
+  <p>CT-1 &nbsp;·&nbsp; B91 Backend &nbsp;·&nbsp; Evaluated on April 27, 2026</p>
+</footer>
+
+</body>
+</html>
